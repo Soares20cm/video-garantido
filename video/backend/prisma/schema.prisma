@@ -1,0 +1,184 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  firstName    String?  @map("first_name")
+  lastName     String?  @map("last_name")
+  avatarUrl    String?  @map("avatar_url")
+  bio          String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  
+  channel       Channel?
+  likes         VideoLike[]
+  subscriptions Subscription[]
+  comments      Comment[]
+  playlists     Playlist[]
+
+  @@map("users")
+}
+
+model Channel {
+  id              String   @id @default(uuid())
+  userId          String   @unique @map("user_id")
+  name            String
+  avatarUrl       String?  @map("avatar_url")
+  bannerUrl       String?  @map("banner_url")
+  description     String?
+  subscriberCount Int      @default(0) @map("subscriber_count")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videos        Video[]
+  subscriptions Subscription[]
+
+  @@map("channels")
+}
+
+model Video {
+  id              String      @id @default(uuid())
+  channelId       String      @map("channel_id")
+  title           String
+  description     String?
+  thumbnailUrl    String      @map("thumbnail_url")
+  duration        Int
+  status          VideoStatus @default(UPLOADING)
+  originalFileUrl String      @map("original_file_url")
+  hlsPlaylistUrl  String?     @map("hls_playlist_url")
+  viewCount       Int         @default(0) @map("view_count")
+  likeCount       Int         @default(0) @map("like_count")
+  dislikeCount    Int         @default(0) @map("dislike_count")
+  commentCount    Int         @default(0) @map("comment_count")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  
+  channel         Channel         @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  variants        VideoVariant[]
+  likes           VideoLike[]
+  comments        Comment[]
+  playlistVideos  PlaylistVideo[]
+
+  @@index([channelId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("videos")
+}
+
+enum VideoStatus {
+  UPLOADING
+  PROCESSING
+  READY
+  FAILED
+}
+
+model VideoVariant {
+  id          String   @id @default(uuid())
+  videoId     String   @map("video_id")
+  quality     String
+  resolution  String
+  bitrate     Int
+  playlistUrl String   @map("playlist_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  video       Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@map("video_variants")
+}
+
+// Video Likes/Dislikes
+model VideoLike {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  videoId   String   @map("video_id")
+  isLike    Boolean  @map("is_like") // true = like, false = dislike
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@index([videoId])
+  @@map("video_likes")
+}
+
+// Channel Subscriptions
+model Subscription {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  channelId String   @map("channel_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channelId])
+  @@index([channelId])
+  @@map("subscriptions")
+}
+
+// Video Comments
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  videoId   String   @map("video_id")
+  parentId  String?  @map("parent_id") // For replies
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+
+  @@index([videoId])
+  @@index([userId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+// Playlists
+model Playlist {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  title       String
+  description String?
+  isPublic    Boolean  @default(true) @map("is_public")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videos      PlaylistVideo[]
+
+  @@index([userId])
+  @@map("playlists")
+}
+
+model PlaylistVideo {
+  id         String   @id @default(uuid())
+  playlistId String   @map("playlist_id")
+  videoId    String   @map("video_id")
+  position   Int      @default(0)
+  addedAt    DateTime @default(now()) @map("added_at")
+  
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  video      Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, videoId])
+  @@index([playlistId])
+  @@index([videoId])
+  @@map("playlist_videos")
+}
