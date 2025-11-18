@@ -79,9 +79,9 @@ export class AuthService {
     };
 
     // Token expires in 24 hours
-    return jwt.sign(payload, config.jwtSecret, {
+    return jwt.sign(payload, config.jwtSecret as jwt.Secret, {
       expiresIn: config.jwtExpiresIn,
-    });
+    } as jwt.SignOptions);
   }
 
   verifyToken(token: string): JwtPayload {
