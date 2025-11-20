@@ -1,7 +1,7 @@
 FROM node:20-alpine
 
-# Install FFmpeg for video processing
-RUN apk add --no-cache ffmpeg
+# Install FFmpeg and OpenSSL for Prisma
+RUN apk add --no-cache ffmpeg openssl1.1-compat
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY video/backend/prisma ./prisma/
 # Install ALL dependencies
 RUN npm install
 
-# Generate Prisma Client
+# Generate Prisma Client for Alpine Linux
 RUN npx prisma generate
 
 # Copy backend source code
@@ -20,9 +20,6 @@ COPY video/backend ./
 
 # Build TypeScript
 RUN npm run build
-
-# List dist directory to verify build
-RUN ls -la dist/
 
 # Expose port
 EXPOSE 4000
