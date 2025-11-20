@@ -5,14 +5,18 @@ RUN apk add --no-cache ffmpeg
 
 WORKDIR /app
 
-# Copy backend package files
-COPY video/backend/package*.json ./
-COPY video/backend/prisma ./prisma/
+# Copy root package files (monorepo)
+COPY video/package*.json ./
 
-# Install ALL dependencies (including devDependencies for build)
+# Copy backend package files
+COPY video/backend/package*.json ./backend/
+COPY video/backend/prisma ./backend/prisma/
+
+# Install dependencies from root (this is a workspace)
 RUN npm ci
 
 # Generate Prisma Client
+WORKDIR /app/backend
 RUN npx prisma generate
 
 # Copy backend source code
@@ -22,10 +26,13 @@ COPY video/backend ./
 RUN npm run build
 
 # Remove devDependencies to reduce image size
+WORKDIR /app
 RUN npm prune --production
 
 # Expose port
 EXPOSE 4000
+
+WORKDIR /app/backend
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
