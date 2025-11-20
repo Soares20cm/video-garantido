@@ -7,6 +7,13 @@ export class RedisService {
   private isConnected: boolean = false;
 
   constructor() {
+    // Skip Redis if URL is not configured or is localhost
+    if (!config.redisUrl || config.redisUrl.includes('localhost')) {
+      console.warn('⚠️  Redis not configured, progress tracking disabled');
+      this.client = null;
+      return;
+    }
+
     try {
       this.client = new Redis(config.redisUrl, {
         maxRetriesPerRequest: 3,
