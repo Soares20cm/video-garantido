@@ -1,7 +1,10 @@
-FROM node:20-alpine3.19
+FROM node:20-slim
 
-# Install FFmpeg and OpenSSL 1.1 for Prisma
-RUN apk add --no-cache ffmpeg openssl1.1-compat
+# Install FFmpeg and OpenSSL for Prisma
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -12,7 +15,7 @@ COPY video/backend/prisma ./prisma/
 # Install ALL dependencies
 RUN npm install
 
-# Generate Prisma Client for Alpine Linux
+# Generate Prisma Client
 RUN npx prisma generate
 
 # Copy backend source code
