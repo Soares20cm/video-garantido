@@ -1,6 +1,6 @@
-FROM node:20-alpine
+FROM node:20-alpine3.19
 
-# Install FFmpeg and OpenSSL for Prisma
+# Install FFmpeg and OpenSSL 1.1 for Prisma
 RUN apk add --no-cache ffmpeg openssl1.1-compat
 
 WORKDIR /app
