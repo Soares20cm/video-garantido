@@ -13,25 +13,8 @@ dotenv.config();
 const app = express();
 const PORT = config.port;
 
-// CORS headers - must be before other middleware
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  
-  next();
-});
-
 // Middleware
-app.use(helmet({
-  crossOriginResourcePolicy: false,
-}));
+app.use(helmet());
 app.use(cors());
 app.use(compression());
 app.use(express.json());
@@ -90,7 +73,6 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
       console.log(`📝 Environment: ${config.nodeEnv}`);
-      console.log(`✅ CORS enabled for all origins`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
