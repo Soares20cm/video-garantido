@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-// Use relative URL to leverage Next.js proxy and avoid CORS
-const API_URL = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000');
+// Always use relative URL in browser to leverage Next.js proxy and avoid CORS
+// Server-side rendering will use the full URL
+const API_URL = '';
 
 export const api = axios.create({
   baseURL: `${API_URL}/api`,
