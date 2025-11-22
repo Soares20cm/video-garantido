@@ -240,8 +240,8 @@ export default function UploadPage() {
                   type="text"
                   id="title"
                   required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  placeholder="Enter video title"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm text-gray-900 bg-white"
+                  placeholder="Digite o título do vídeo"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   maxLength={100}
@@ -258,8 +258,8 @@ export default function UploadPage() {
                 <textarea
                   id="description"
                   rows={4}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  placeholder="Tell viewers about your video"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm text-gray-900 bg-white"
+                  placeholder="Descreva seu vídeo"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   maxLength={5000}

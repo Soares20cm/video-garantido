@@ -19,6 +19,10 @@ router.put('/:id', authenticate, channelController.updateChannel.bind(channelCon
 // POST /api/channels/:id/avatar - Upload channel avatar (protected)
 router.post('/:id/avatar', authenticate, channelController.uploadAvatar.bind(channelController));
 
+// GET /api/channels/:id/videos - Get channel videos (public)
+import videoController from '../controllers/video.controller';
+router.get('/:id/videos', videoController.getChannelVideos.bind(videoController));
+
 export default router;
 
 // Subscription routes

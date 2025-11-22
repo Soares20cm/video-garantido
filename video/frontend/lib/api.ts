@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-// Always use relative URL in browser to leverage Next.js proxy and avoid CORS
-// Server-side rendering will use the full URL
-const API_URL = '';
+// Use API routes to avoid CORS issues
+// All requests go through /api which forwards to backend
+const API_URL = '/api';
 
 export const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },

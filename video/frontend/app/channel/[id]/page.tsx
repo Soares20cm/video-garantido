@@ -37,9 +37,12 @@ export default function ChannelPage() {
   const loadVideos = async () => {
     try {
       const response = await api.get(`/channels/${params.id}/videos`);
-      setVideos(response.data.videos);
+      // A API pode retornar array direto ou objeto com videos
+      const videosData = Array.isArray(response.data) ? response.data : response.data.videos || [];
+      setVideos(videosData);
     } catch (err) {
-      console.error('Failed to load videos');
+      console.error('Failed to load videos:', err);
+      setVideos([]);
     }
   };
 
@@ -149,7 +152,7 @@ export default function ChannelPage() {
                     {video.title}
                   </h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    {video.viewCount} views
+                    {video.views || video.viewCount || 0} visualizações
                   </p>
                 </div>
               </Link>

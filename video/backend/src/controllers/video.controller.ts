@@ -4,6 +4,7 @@ import channelService from '../services/channel.service';
 import storageService from '../services/storage.service';
 import localStorageService from '../services/local-storage.service';
 import redisService from '../services/redis.service';
+import thumbnailService from '../services/thumbnail.service';
 import prisma from '../config/database';
 import config from '../config';
 import { CreateVideoRequest, UpdateVideoRequest } from '../types/video.types';
@@ -115,15 +116,39 @@ export class VideoController {
         videoId: tempVideo.id,
         progress: 100,
         status: 'processing',
-        message: 'Upload complete, processing video...',
+        message: 'Upload complete, generating thumbnail...',
       });
 
-      // TODO: Queue video for processing (Task 7)
-      // For now, we'll just set a placeholder thumbnail
-      const placeholderThumbnail = `${config.cdnUrl || 'http://localhost:4000'}/placeholder-thumbnail.jpg`;
+      // Generate thumbnail from first frame of video
+      let thumbnailUrl: string;
+      try {
+        console.log('🎬 Generating thumbnail from video...');
+        const thumbnailBuffer = await thumbnailService.generateThumbnailFromBuffer(
+          videoFile.buffer,
+          tempVideo.id
+        );
+        
+        // Upload thumbnail to storage
+        const thumbnailFileName = this.storage.generateFileName(`${tempVideo.id}_thumb.jpg`);
+        thumbnailUrl = await this.storage.uploadThumbnail(
+          thumbnailBuffer,
+          tempVideo.id,
+          thumbnailFileName
+        );
+        console.log('✅ Thumbnail generated and uploaded successfully');
+      } catch (thumbnailError) {
+        console.error('⚠️  Failed to generate thumbnail, using placeholder:', thumbnailError);
+        // Fallback to placeholder if thumbnail generation fails
+        thumbnailUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4MCIgaGVpZ2h0PSI3MjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyODAiIGhlaWdodD0iNzIwIiBmaWxsPSIjZTVlN2ViIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSI0OCIgZmlsbD0iIzlhYTBhNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPlZpZGVvIFRodW1ibmFpbDwvdGV4dD48L3N2Zz4=';
+      }
+
+      // Update video with thumbnail and mark as ready
       await prisma.video.update({
         where: { id: tempVideo.id },
-        data: { thumbnailUrl: placeholderThumbnail },
+        data: { 
+          thumbnailUrl,
+          status: 'READY' // Mark video as ready to play
+        },
       });
 
       res.status(201).json({

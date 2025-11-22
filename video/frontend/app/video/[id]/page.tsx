@@ -27,9 +27,14 @@ export default function VideoPage() {
     recordView();
     if (user) {
       checkLikeStatus();
-      checkSubscriptionStatus();
     }
   }, [params.id, user]);
+
+  useEffect(() => {
+    if (user && video && !isOwner) {
+      checkSubscriptionStatus();
+    }
+  }, [video, user, isOwner]);
 
   const loadVideo = async () => {
     try {
@@ -112,12 +117,19 @@ export default function VideoPage() {
     try {
       if (isSubscribed) {
         await api.delete(`/channels/${video.channel.id}/subscribe`);
+        setIsSubscribed(false);
       } else {
         await api.post(`/channels/${video.channel.id}/subscribe`);
+        setIsSubscribed(true);
       }
-      setIsSubscribed(!isSubscribed);
-    } catch (err) {
-      console.error('Failed to subscribe');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error?.message || 'Failed to subscribe';
+      console.error('Subscribe error:', errorMessage);
+      if (errorMessage.includes('own channel')) {
+        // Don't show error for own channel - just silently ignore
+        return;
+      }
+      alert(errorMessage);
     }
   };
 

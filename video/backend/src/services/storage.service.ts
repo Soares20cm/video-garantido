@@ -34,7 +34,7 @@ export class StorageService {
   }
 
   /**
-   * Upload file to S3/R2
+   * Upload file to S3/R2 or local storage
    */
   async uploadFile(
     file: Buffer | fs.ReadStream,
@@ -42,6 +42,11 @@ export class StorageService {
     contentType: string,
     metadata?: Record<string, string>
   ): Promise<string> {
+    // If S3 is not configured, save locally
+    if (!this.isConfigured()) {
+      return this.uploadFileLocally(file, key);
+    }
+
     try {
       const upload = new Upload({
         client: this.s3Client,
@@ -64,6 +69,36 @@ export class StorageService {
       console.error('Upload error:', error);
       throw new Error('Failed to upload file to storage');
     }
+  }
+
+  /**
+   * Upload file to local storage (fallback)
+   */
+  private async uploadFileLocally(file: Buffer | fs.ReadStream, key: string): Promise<string> {
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    const filePath = path.join(uploadsDir, key);
+    const fileDir = path.dirname(filePath);
+
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(fileDir)) {
+      fs.mkdirSync(fileDir, { recursive: true });
+    }
+
+    // Write file
+    if (Buffer.isBuffer(file)) {
+      fs.writeFileSync(filePath, file);
+    } else {
+      // Handle stream
+      const writeStream = fs.createWriteStream(filePath);
+      await new Promise((resolve, reject) => {
+        file.pipe(writeStream);
+        writeStream.on('finish', resolve);
+        writeStream.on('error', reject);
+      });
+    }
+
+    // Return local URL
+    return `/uploads/${key}`;
   }
 
   /**
